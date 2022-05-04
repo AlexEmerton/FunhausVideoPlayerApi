@@ -1,0 +1,57 @@
+using FunhausVideoPlayerApi.Models;
+using FunhausVideoPlayerApi.Services;
+using Microsoft.AspNetCore.Mvc;
+
+namespace FunhausVideoPlayerApi.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class VideoController : ControllerBase
+{
+    private readonly VideoService _videoService;
+
+    public VideoController(VideoService videoService) => _videoService = videoService;
+
+    [HttpGet]
+    public async Task<List<Funhaus>> Get() => await _videoService.GetAsync();
+
+    [HttpGet("{id:length(24)}")]
+    public async Task<ActionResult<Funhaus>> Get(string id){
+        var funhaus = await _videoService.GetAsync(id);
+
+        if (funhaus is null) return NotFound();
+
+        return funhaus;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Post(Funhaus newFunhaus){
+        await _videoService.CreateAsync(newFunhaus);
+
+        return CreatedAtAction(nameof(Get), new { id = newFunhaus.Id }, newFunhaus);
+    }
+
+    [HttpPut("{id:length(24)}")]
+    public async Task<IActionResult> Update(string id, Funhaus updatedFunhaus){
+        var funhaus = await _videoService.GetAsync(id);
+
+        if (funhaus is null) return NotFound();
+
+        updatedFunhaus.Id = funhaus.Id;
+
+        await _videoService.UpdateAsync(id, updatedFunhaus);
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id:length(24)}")]
+    public async Task<IActionResult> Delete(string id){
+        var funhaus = _videoService.GetAsync(id);
+
+        if (funhaus is null) return NotFound();
+
+        await _videoService.RemoveAsync(id);
+
+        return NoContent();
+    }
+}

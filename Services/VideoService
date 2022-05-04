@@ -1,0 +1,30 @@
+using FunhausVideoPlayerApi.Models;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+
+namespace FunhausVideoPlayerApi.Services;
+
+public class VideoService
+{
+    private readonly IMongoCollection<Funhaus> _funhausCollection;
+    
+    public VideoService(IOptions<VideoDatabaseSettings> videoDatabaseSettings)
+    {
+        var mongoClient = new MongoClient(videoDatabaseSettings.Value.ConnectionString);
+        var mongoDatabase = mongoClient.GetDatabase(videoDatabaseSettings.Value.DatabaseName);
+
+        _funhausCollection = mongoDatabase.GetCollection<Funhaus>(
+            videoDatabaseSettings.Value.FunhausCollectionName
+        );
+    }
+
+    public async Task<List<Funhaus>> GetAsync() => await _funhausCollection.Find(_ => true).ToListAsync();
+
+    public async Task<Funhaus?> GetAsync(string id) => await _funhausCollection.Find(_ => _.Id == id).FirstOrDefaultAsync();
+
+    public async Task CreateAsync(Funhaus newFunhaus) => await _funhausCollection.InsertOneAsync(newFunhaus);
+
+    public async Task UpdateAsync(string id, Funhaus updatedFunhaus) => await _funhausCollection.ReplaceOneAsync(_ => _.Id == id, updatedFunhaus);
+
+    public async Task RemoveAsync(string id) => await _funhausCollection.DeleteOneAsync(_ => _.Id == id);
+}
